@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Passkeys</string>
+    <string name="asset_statements" translatable="false">
+    [{
+      \"include\": \"https://c5e205c5-cb58-4b92-a591-5a082d33874f.hanko.io/.well-known/assetlinks.json\"
+    }]
+</string>
+    <string name="text_continue">Continue</string>
+    <string name="enter_your_email">Enter your email</string>
+    <string name="please_enter_your_passcode">Please enter your passcode</string>
+    <string name="sign_in_with_passkey">Sign in with Passkey</string>
+    <string name="your_credentials">Your credentials:</string>
+    <string name="logout">Logout</string>
+    <string name="welcome">Welcome! Your userId is:</string>
+    <string name="create_passkey">Create Passkey</string>
+    <string name="skip">Skip</string>
+</resources>
