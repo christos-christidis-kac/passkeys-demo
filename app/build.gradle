@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace 'com.christidischristidis.passkeys'
+    namespace 'com.christidischristos.passkeys'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.christidischristidis.passkeys"
+        applicationId "com.christidischristos.passkeys"
         minSdk 28
         targetSdk 33
         versionCode 1
@@ -66,10 +66,6 @@ dependencies {
 
     // fido2
     implementation 'com.google.android.gms:play-services-fido:20.0.1'
-
-    // credentials manager
-    implementation 'androidx.credentials:credentials:1.0.0-alpha09'
-    implementation 'androidx.credentials:credentials-play-services-auth:1.0.0-alpha09'
 
     // datastore
     implementation 'androidx.datastore:datastore-preferences:1.0.0'
