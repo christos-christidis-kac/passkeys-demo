@@ -1,5 +1,8 @@
 package com.christidischristidis.passkeys.screen.passkey
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +54,8 @@ fun CreatePasskeyScreenContent(
     onUserInteraction: (CreatePasskeyViewModel.UserInteraction) -> Unit
 ) {
 
+    val activity = LocalContext.current.findActivity()
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -59,7 +65,7 @@ fun CreatePasskeyScreenContent(
     ) {
 
         Button(
-            onClick = { onUserInteraction(Event.OnCreatePasskeyClicked) },
+            onClick = { onUserInteraction(Event.OnCreatePasskeyClicked(activity)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp)
         ) {
@@ -89,4 +95,13 @@ fun CreatePasskeyScreenPreview() {
             onUserInteraction = {}
         )
     }
+}
+
+fun Context.findActivity(): Activity {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    throw IllegalStateException("no activity")
 }

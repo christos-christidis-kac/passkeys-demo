@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class FinalizeWebauthnLoginResponse(
+data class FinalizeWebauthnResponse(
     @SerialName("credential_id")
     val credentialId: String,
     @SerialName("user_id")

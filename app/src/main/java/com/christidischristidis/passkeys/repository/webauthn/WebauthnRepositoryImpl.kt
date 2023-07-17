@@ -7,13 +7,14 @@ import androidx.datastore.preferences.core.edit
 import com.christidischristidis.passkeys.datastore.Constants.JWT_KEY
 import com.christidischristidis.passkeys.network.api.WebauthnApi
 import com.christidischristidis.passkeys.network.model.FinalizeWebauthnLoginRequest
-import com.christidischristidis.passkeys.network.model.FinalizeWebauthnLoginResponse
 import com.christidischristidis.passkeys.network.model.FinalizeWebauthnRegistrationRequest
+import com.christidischristidis.passkeys.network.model.FinalizeWebauthnResponse
 import com.christidischristidis.passkeys.network.model.InitWebauthnLoginRequest
-import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationRequest
+import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationResponse
 import com.christidischristidis.passkeys.repository.ApiResult
 import com.christidischristidis.passkeys.repository.util.safeApiCall
 import com.christidischristidis.passkeys.repository.util.throwUnauthorized
+import com.christidischristidis.passkeys.screen.passkey.CredentialManagerCreatedKeyData
 import com.google.android.gms.fido.fido2.api.common.AuthenticatorAssertionResponse
 import com.google.android.gms.fido.fido2.api.common.AuthenticatorErrorResponse
 import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential
@@ -21,6 +22,7 @@ import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 class WebauthnRepositoryImpl @Inject constructor(
@@ -62,7 +64,7 @@ class WebauthnRepositoryImpl @Inject constructor(
 
     override suspend fun finalizeWebauthnLogin(
         credential: PublicKeyCredential
-    ): ApiResult<FinalizeWebauthnLoginResponse> {
+    ): ApiResult<FinalizeWebauthnResponse> {
         require(credential.response !is AuthenticatorErrorResponse) {
             "credential.response must not contain AuthenticatorErrorResponse"
         }
@@ -95,24 +97,21 @@ class WebauthnRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun initWebauthnRegistration(
-        request: InitWebauthnRegistrationRequest
-    ): ApiResult<Unit> {
+    override suspend fun initWebauthnRegistration(): ApiResult<InitWebauthnRegistrationResponse> {
         return safeApiCall {
             webauthnApi.initWebauthnRegistration(
-                bearerToken = "Bearer $jwtKey",
-                request = request
+                bearerToken = "Bearer $jwtKey"
             )
         }
     }
 
     override suspend fun finalizeWebauthnRegistration(
-        request: FinalizeWebauthnRegistrationRequest
-    ): ApiResult<Unit> {
+        credentialManagerRegistrationJson: String
+    ): ApiResult<FinalizeWebauthnResponse> {
         return safeApiCall {
             webauthnApi.finalizeWebauthnRegistration(
                 bearerToken = "Bearer $jwtKey",
-                request = request
+                body = credentialManagerRegistrationJson.toRegistrationRequest()
             )
         }
     }
@@ -131,5 +130,19 @@ private fun toBase64WithFlags(byteArray: ByteArray): String {
     return Base64.encodeToString(
         byteArray,
         Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
+    )
+}
+
+private fun String.toRegistrationRequest(): FinalizeWebauthnRegistrationRequest {
+    val data = Json.decodeFromString<CredentialManagerCreatedKeyData>(this)
+    return FinalizeWebauthnRegistrationRequest(
+        id = data.id,
+        rawId = data.rawId,
+        type = data.type,
+        response = FinalizeWebauthnRegistrationRequest.Response(
+            clientDataJSON = data.response.clientDataJSON,
+            attestationObject = data.response.attestationObject,
+            transports = data.response.transports
+        )
     )
 }

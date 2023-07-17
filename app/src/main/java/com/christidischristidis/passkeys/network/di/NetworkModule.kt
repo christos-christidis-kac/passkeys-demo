@@ -10,6 +10,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.time.Duration
 import javax.inject.Singleton
 
@@ -24,6 +25,7 @@ class NetworkModule {
         return Retrofit.Builder()
             .baseUrl("https://c5e205c5-cb58-4b92-a591-5a082d33874f.hanko.io/")
             .client(okHttpClient)
+            .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(Json.asConverterFactory(contentType))
             .build();
     }

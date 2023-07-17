@@ -1,8 +1,8 @@
 package com.christidischristidis.passkeys.repository.webauthn
 
-import com.christidischristidis.passkeys.network.model.FinalizeWebauthnLoginResponse
 import com.christidischristidis.passkeys.network.model.FinalizeWebauthnRegistrationRequest
-import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationRequest
+import com.christidischristidis.passkeys.network.model.FinalizeWebauthnResponse
+import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationResponse
 import com.christidischristidis.passkeys.repository.ApiResult
 import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential
 import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOptions
@@ -15,15 +15,13 @@ interface WebauthnRepository {
 
     suspend fun finalizeWebauthnLogin(
         credential: PublicKeyCredential
-    ): ApiResult<FinalizeWebauthnLoginResponse>
+    ): ApiResult<FinalizeWebauthnResponse>
 
-    suspend fun initWebauthnRegistration(
-        request: InitWebauthnRegistrationRequest
-    ): ApiResult<Unit>
+    suspend fun initWebauthnRegistration(): ApiResult<InitWebauthnRegistrationResponse>
 
     suspend fun finalizeWebauthnRegistration(
-        request: FinalizeWebauthnRegistrationRequest
-    ): ApiResult<Unit>
+        credentialManagerRegistrationJson: String
+    ): ApiResult<FinalizeWebauthnResponse>
 
     suspend fun deleteWebauthnCredential(
         credentialId: String

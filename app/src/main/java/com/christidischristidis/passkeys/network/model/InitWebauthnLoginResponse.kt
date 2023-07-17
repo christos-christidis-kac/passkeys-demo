@@ -1,6 +1,5 @@
 package com.christidischristidis.passkeys.network.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -13,23 +12,12 @@ data class InitWebauthnLoginResponse(
         val timeout: Long?,
         val rpId: String,
         val allowCredentials: List<AllowCredential>? = null,
-        val userVerification: UserVerification
+        val userVerification: String? = null
     ) {
         @Serializable
         data class AllowCredential(
             val type: String,
             val id: String
         )
-
-        enum class UserVerification {
-            @SerialName("required")
-            REQUIRED,
-
-            @SerialName("preferred")
-            PREFERRED,
-
-            @SerialName("discouraged")
-            DISCOURAGED
-        }
     }
 }

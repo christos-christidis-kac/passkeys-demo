@@ -1,13 +1,14 @@
-package com.christidischristidis.passkeys.network.model
+package com.christidischristidis.passkeys.screen.passkey
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class FinalizeWebauthnRegistrationRequest(
+data class CredentialManagerCreatedKeyData(
+    val response: Response,
+    val authenticatorAttachment: String,
     val id: String,
     val rawId: String,
-    val type: String,
-    val response: Response
+    val type: String
 ) {
     @Serializable
     data class Response(

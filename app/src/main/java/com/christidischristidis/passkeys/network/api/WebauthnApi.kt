@@ -1,11 +1,11 @@
 package com.christidischristidis.passkeys.network.api
 
 import com.christidischristidis.passkeys.network.model.FinalizeWebauthnLoginRequest
-import com.christidischristidis.passkeys.network.model.FinalizeWebauthnLoginResponse
 import com.christidischristidis.passkeys.network.model.FinalizeWebauthnRegistrationRequest
+import com.christidischristidis.passkeys.network.model.FinalizeWebauthnResponse
 import com.christidischristidis.passkeys.network.model.InitWebauthnLoginRequest
 import com.christidischristidis.passkeys.network.model.InitWebauthnLoginResponse
-import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationRequest
+import com.christidischristidis.passkeys.network.model.InitWebauthnRegistrationResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -17,25 +17,24 @@ interface WebauthnApi {
 
     @POST("webauthn/login/initialize")
     suspend fun initWebauthnLogin(
-        @Body request: InitWebauthnLoginRequest
+        @Body body: InitWebauthnLoginRequest
     ): InitWebauthnLoginResponse
 
     @POST("webauthn/login/finalize")
     suspend fun finalizeWebauthnLogin(
-        @Body request: FinalizeWebauthnLoginRequest
-    ): Response<FinalizeWebauthnLoginResponse>
+        @Body body: FinalizeWebauthnLoginRequest
+    ): Response<FinalizeWebauthnResponse>
 
     @POST("webauthn/registration/initialize")
     suspend fun initWebauthnRegistration(
-        @Header("Authorization") bearerToken: String,
-        @Body request: InitWebauthnRegistrationRequest
-    )
+        @Header("Authorization") bearerToken: String
+    ): InitWebauthnRegistrationResponse
 
     @POST("webauthn/registration/finalize")
     suspend fun finalizeWebauthnRegistration(
         @Header("Authorization") bearerToken: String,
-        @Body request: FinalizeWebauthnRegistrationRequest
-    )
+        @Body body: FinalizeWebauthnRegistrationRequest
+    ): FinalizeWebauthnResponse
 
     @DELETE("webauthn/credentials/{id}")
     suspend fun deleteWebauthnCredential(
