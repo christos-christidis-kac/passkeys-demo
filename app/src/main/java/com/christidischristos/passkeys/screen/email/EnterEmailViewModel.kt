@@ -1,11 +1,11 @@
 package com.christidischristos.passkeys.screen.email
 
-import android.app.Activity.RESULT_OK
 import android.util.Patterns
-import androidx.activity.result.ActivityResult
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.PublicKeyCredential
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -16,10 +16,6 @@ import com.christidischristos.passkeys.repository.ApiResult
 import com.christidischristos.passkeys.repository.passcode.PasscodeRepository
 import com.christidischristos.passkeys.repository.user.UserRepository
 import com.christidischristos.passkeys.repository.webauthn.WebauthnRepository
-import com.google.android.gms.fido.Fido
-import com.google.android.gms.fido.fido2.api.common.AuthenticatorErrorResponse
-import com.google.android.gms.fido.fido2.api.common.PublicKeyCredential
-import com.google.android.gms.fido.fido2.api.common.PublicKeyCredentialRequestOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,7 +36,13 @@ class EnterEmailViewModel @Inject constructor(
             is UserInteraction.OnEmailChanged -> onEmailChanged(userInteraction.newEmail)
             UserInteraction.OnContinueClicked -> onContinueClicked()
             UserInteraction.OnSignInWithPasskeyClicked -> onSignInWithPasskeyClicked()
-            is UserInteraction.OnActivityResultReceived -> onActivityResultReceived(userInteraction.activityResult)
+            is UserInteraction.OnSignInWithPasskeyException -> {
+                onSignInWithPasskeyException(userInteraction.e)
+            }
+
+            is UserInteraction.OnSignInWithPasskeySuccess -> {
+                onSignInWithPasskeySuccess(userInteraction.credential)
+            }
         }
     }
 
@@ -63,6 +65,23 @@ class EnterEmailViewModel @Inject constructor(
     private fun onSignInWithPasskeyClicked() {
         updateUiState { it.copy(error = null) }
         getOrCreateUserAndContinue(withPasskey = true)
+    }
+
+    private fun onSignInWithPasskeySuccess(credential: PublicKeyCredential) {
+        viewModelScope.launch {
+            when (
+                val apiResult = webauthnRepository.finalizeWebauthnLogin(credential)
+            ) {
+                is ApiResult.HttpError -> showError("finalizeWebauthnLogin: ${apiResult.msg}")
+                ApiResult.NetworkError -> showError("Network error!")
+                is ApiResult.Success -> updateUiState { it.copy(goToHomeScreen = true) }
+                is ApiResult.GeneralError -> showError("finalizeWebauthnLogin: ${apiResult.msg}")
+            }
+        }
+    }
+
+    private fun onSignInWithPasskeyException(exception: Exception) {
+        showError("Sign in w Passkey: ${exception.message}")
     }
 
     private fun getOrCreateUserAndContinue(withPasskey: Boolean) {
@@ -117,7 +136,8 @@ class EnterEmailViewModel @Inject constructor(
                 dataStore.edit { prefs ->
                     prefs[USER_ID_KEY] = userId
                 }
-                updateUiState { it.copy(optionsForIntent = apiResult.data) }
+                val getCredentialRequest = GetCredentialRequest(listOf(apiResult.data))
+                updateUiState { it.copy(getCredentialRequest = getCredentialRequest) }
             }
 
             is ApiResult.GeneralError -> showError("initWebauthnLogin: ${apiResult.msg}")
@@ -130,38 +150,6 @@ class EnterEmailViewModel @Inject constructor(
             ApiResult.NetworkError -> showError("Network error!")
             is ApiResult.Success -> updateUiState { it.copy(goToEnterPasscodeScreen = true) }
             is ApiResult.GeneralError -> showError("initPasscodeLogin: ${apiResult.msg}")
-        }
-    }
-
-    private fun onActivityResultReceived(activityResult: ActivityResult) {
-        val dataBytes = activityResult.data?.getByteArrayExtra(Fido.FIDO2_KEY_CREDENTIAL_EXTRA)
-        when {
-            activityResult.resultCode != RESULT_OK -> {
-                showError("onActivityResultReceived: FIDO2 authentication cancelled")
-            }
-
-            dataBytes == null -> {
-                showError("onActivityResultReceived: Error occurred on credential assertion")
-            }
-
-            else -> {
-                val credential = PublicKeyCredential.deserializeFromBytes(dataBytes)
-                val response = credential.response
-                if (response is AuthenticatorErrorResponse) {
-                    showError("CredentialAssertion failed: ${response.errorCode} - ${response.errorMessage}")
-                } else {
-                    viewModelScope.launch {
-                        when (
-                            val apiResult = webauthnRepository.finalizeWebauthnLogin(credential)
-                        ) {
-                            is ApiResult.HttpError -> showError("finalizeWebauthnLogin: ${apiResult.msg}")
-                            ApiResult.NetworkError -> showError("Network error!")
-                            is ApiResult.Success -> updateUiState { it.copy(goToHomeScreen = true) }
-                            is ApiResult.GeneralError -> showError("finalizeWebauthnLogin: ${apiResult.msg}")
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -178,7 +166,7 @@ class EnterEmailViewModel @Inject constructor(
         val emailEnabled: Boolean = false,
         val loginWithPasskeyEnabled: Boolean = false,
         val error: String? = null,
-        val optionsForIntent: PublicKeyCredentialRequestOptions? = null,
+        val getCredentialRequest: GetCredentialRequest? = null,
         val goToEnterPasscodeScreen: Boolean = false,
         val goToHomeScreen: Boolean = false
     )
@@ -187,6 +175,7 @@ class EnterEmailViewModel @Inject constructor(
         data class OnEmailChanged(val newEmail: String) : UserInteraction
         object OnContinueClicked : UserInteraction
         object OnSignInWithPasskeyClicked : UserInteraction
-        data class OnActivityResultReceived(val activityResult: ActivityResult) : UserInteraction
+        data class OnSignInWithPasskeySuccess(val credential: PublicKeyCredential) : UserInteraction
+        data class OnSignInWithPasskeyException(val e: Exception) : UserInteraction
     }
 }

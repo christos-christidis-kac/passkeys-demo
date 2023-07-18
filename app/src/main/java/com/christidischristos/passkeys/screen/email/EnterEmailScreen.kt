@@ -1,8 +1,5 @@
 package com.christidischristos.passkeys.screen.email
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,12 +20,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.PublicKeyCredential
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.christidischristos.passkeys.R
-import com.christidischristos.passkeys.screen.util.ScreenUtil.showToast
+import com.christidischristos.passkeys.screen.util.ScreenUtil.findActivity
 import com.christidischristos.passkeys.ui.composable.MyPrimaryButton
 import com.christidischristos.passkeys.ui.theme.PasskeysTheme
-import com.google.android.gms.fido.Fido
 import com.christidischristos.passkeys.screen.email.EnterEmailViewModel.UserInteraction as Event
 
 @Composable
@@ -40,12 +38,6 @@ fun EnterEmailScreen(
     val uiState by viewModel.uiState
 
     val context = LocalContext.current
-
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) {
-        viewModel.onUserInteraction(Event.OnActivityResultReceived(it))
-    }
 
     LaunchedEffect(uiState.goToEnterPasscodeScreen) {
         if (uiState.goToEnterPasscodeScreen) {
@@ -59,16 +51,19 @@ fun EnterEmailScreen(
         }
     }
 
-    LaunchedEffect(uiState.optionsForIntent) {
-        uiState.optionsForIntent?.let { options ->
-            val fidoClient = Fido.getFido2ApiClient(context)
-            fidoClient.getSignPendingIntent(options)
-                .addOnFailureListener {
-                    showToast(context, "authentication passkey failed: $it")
-                }
-                .addOnSuccessListener {
-                    launcher.launch(IntentSenderRequest.Builder(it).build())
-                }
+    LaunchedEffect(uiState.getCredentialRequest) {
+        uiState.getCredentialRequest?.let { request ->
+            val credentialManager = CredentialManager.create(context)
+            try {
+                val credential = credentialManager.getCredential(
+                    request,
+                    context.findActivity()
+                ).credential as PublicKeyCredential
+                viewModel.onUserInteraction(Event.OnSignInWithPasskeySuccess(credential))
+            } catch (e: Exception) {
+                println(e)
+                viewModel.onUserInteraction(Event.OnSignInWithPasskeyException(e))
+            }
         }
     }
 

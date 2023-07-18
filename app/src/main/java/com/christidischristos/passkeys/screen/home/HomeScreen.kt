@@ -70,6 +70,8 @@ fun HomeScreenContent(
             style = MaterialTheme.typography.bodyLarge
         )
         Spacer(Modifier.height(32.dp))
+        FakeTransactions()
+        Spacer(Modifier.height(32.dp))
         Text(
             text = stringResource(R.string.your_credentials_ids_are),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),

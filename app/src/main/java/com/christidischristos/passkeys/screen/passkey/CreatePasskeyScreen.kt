@@ -1,8 +1,5 @@
 package com.christidischristos.passkeys.screen.passkey
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,14 +15,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CreatePublicKeyCredentialResponse
+import androidx.credentials.CredentialManager
+import androidx.credentials.exceptions.CreateCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.christidischristos.passkeys.R
-import com.christidischristos.passkeys.screen.util.ScreenUtil.showToast
+import com.christidischristos.passkeys.screen.util.ScreenUtil.findActivity
 import com.christidischristos.passkeys.ui.composable.MyErrorText
 import com.christidischristos.passkeys.ui.composable.MyPrimaryButton
 import com.christidischristos.passkeys.ui.composable.MyTextButton
 import com.christidischristos.passkeys.ui.theme.PasskeysTheme
-import com.google.android.gms.fido.Fido
 import com.christidischristos.passkeys.screen.passkey.CreatePasskeyViewModel.UserInteraction as Event
 
 @Composable
@@ -37,28 +36,22 @@ fun CreatePasskeyScreen(
 
     val context = LocalContext.current
 
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartIntentSenderForResult()
-    ) {
-        viewModel.onUserInteraction(Event.OnActivityResultReceived(it))
-    }
-
     LaunchedEffect(uiState.goToHomeScreen) {
         if (uiState.goToHomeScreen) {
             onGoToHomeScreen()
         }
     }
 
-    LaunchedEffect(uiState.optionsForIntent) {
-        uiState.optionsForIntent?.let { options ->
-            val fidoClient = Fido.getFido2ApiClient(context)
-            fidoClient.getRegisterPendingIntent(options)
-                .addOnFailureListener {
-                    showToast(context, "register passkey failed; $it")
-                }
-                .addOnSuccessListener {
-                    launcher.launch(IntentSenderRequest.Builder(it).build())
-                }
+    LaunchedEffect(uiState.createKeyRequest) {
+        uiState.createKeyRequest?.let { request ->
+            val credentialManager = CredentialManager.create(context)
+            try {
+                val response = credentialManager.createCredential(request, context.findActivity())
+                    as CreatePublicKeyCredentialResponse
+                viewModel.onUserInteraction(Event.OnCreatePasskeySuccess(response))
+            } catch (e: CreateCredentialException) {
+                viewModel.onUserInteraction(Event.OnCreatePasskeyException(e))
+            }
         }
     }
 

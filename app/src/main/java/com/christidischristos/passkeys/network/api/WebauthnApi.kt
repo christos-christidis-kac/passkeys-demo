@@ -1,6 +1,5 @@
 package com.christidischristos.passkeys.network.api
 
-import com.christidischristos.passkeys.network.model.FinalizeWebauthnLoginRequest
 import com.christidischristos.passkeys.network.model.FinalizeWebauthnRegistrationRequest
 import com.christidischristos.passkeys.network.model.FinalizeWebauthnResponse
 import com.christidischristos.passkeys.network.model.InitWebauthnLoginRequest
@@ -22,7 +21,7 @@ interface WebauthnApi {
 
     @POST("webauthn/login/finalize")
     suspend fun finalizeWebauthnLogin(
-        @Body body: FinalizeWebauthnLoginRequest
+        @Body body: String
     ): Response<FinalizeWebauthnResponse>
 
     @POST("webauthn/registration/initialize")
